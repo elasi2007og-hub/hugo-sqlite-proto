@@ -54,12 +54,13 @@ CREATE TABLE words (
 Q_SEARCH = """
 SELECT json_group_array(json_object(
   'url', url, 'title', title, 'date', date, 'summary', summary,
-  'tags', json(tags), 'text', body))
+  'words', words, 'tags', json(tags), 'text', body))
 FROM (
-  SELECT p.*,
+  SELECT p.*, COALESCE(w.n, 0) AS words,
          (SELECT json_group_array(tag) FROM tags t WHERE t.url = p.url) AS tags
   FROM posts p
-  ORDER BY date DESC, title
+  LEFT JOIN words w ON w.url = p.url
+  ORDER BY p.date DESC, p.title
 )
 """
 
@@ -71,11 +72,12 @@ FROM (
 )
 """
 
-# Agregación: total de palabras en el sitio y conteo por URL.
+# Agregación: total de palabras en el sitio, media y conteo por URL.
 Q_WORDS = """
 SELECT json_object(
   'total', COALESCE(SUM(n), 0),
   'posts', COUNT(*),
+  'avg', COALESCE(CAST(ROUND(AVG(n)) AS INTEGER), 0),
   'by_url', COALESCE((SELECT json_group_object(url, n) FROM words), json('{}'))
 )
 FROM words

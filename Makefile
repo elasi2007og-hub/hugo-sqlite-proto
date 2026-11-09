@@ -1,6 +1,6 @@
 # Hugo + SQLite (solo en build). Cada objetivo hace una cosa.
 .DEFAULT_GOAL := help
-.PHONY: index build serve serve-drafts check clean check-invites help
+.PHONY: index build serve serve-drafts check stats clean check-invites help
 
 index:   ## Markdown → SQLite → static/search.json + data/tags.json + data/words.json
 	python3 tools/index.py
@@ -20,6 +20,9 @@ check: index   ## Valida que los JSON generados son JSON de verdad
 	python3 -m json.tool data/tags.json > /dev/null
 	python3 -m json.tool data/words.json > /dev/null
 	@echo "check: OK"
+
+stats: index   ## Muestra resumen SQL de páginas y palabras desde build/site.db
+	@python3 -c 'import sqlite3; con = sqlite3.connect("build/site.db"); [print(f"{n:4d} palabras  {url:<42} ({title})") for url, title, n in con.execute("SELECT p.url, p.title, w.n FROM posts p JOIN words w USING(url) ORDER BY w.n DESC")]'
 
 clean:   ## Borra todo lo generado (public/, resources/, build/, JSON)
 	rm -rf public resources build static/search.json data/tags.json data/words.json .hugo_build.lock
