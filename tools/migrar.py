@@ -21,6 +21,7 @@ Uso:
   python3 tools/migrar.py --destino ~/chyrp-datos/copia.sqlite
 """
 import argparse
+import hashlib
 import json
 import re
 import sqlite3
@@ -51,6 +52,15 @@ def fecha_chyrp(valor, por_defecto):
     return f"{dia} {hora_min or '00:00'}:{seg or '00'}"
 
 
+def par_etiqueta(nombre):
+    texto = str(nombre)
+    if texto.lstrip("-").isdigit():
+        clave = "\ufe0e" + texto
+        limpio = hashlib.md5(clave.encode("utf-8")).hexdigest()
+        return clave, limpio
+    return texto, slugify(texto)
+
+
 def etiquetas_json(nombres):
     """['sql', 'Árbol B'] → '{"sql":"sql","\\u00c1rbol B":"arbol-b"}'.
 
@@ -59,7 +69,7 @@ def etiquetas_json(nombres):
     """
     if not nombres:
         return "[]"
-    asociacion = {nombre: slugify(nombre) for nombre in nombres}
+    asociacion = dict(par_etiqueta(nombre) for nombre in nombres)
     # PHP escribe "/" como "\/" y Python no: igualamos los bytes.
     return json.dumps(asociacion, separators=(",", ":")).replace("/", "\\/")
 
