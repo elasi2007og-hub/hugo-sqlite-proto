@@ -131,6 +131,29 @@ def extraer_paginas(origen="content"):
     return [leer_entrada(p) for p in ficheros]
 
 
+def extraer_desde_db(db_path="build/site.db"):
+    """Ejercicio 3: lee posts y tags desde build/site.db."""
+    if not Path(db_path).is_file():
+        sys.exit(f"migrar.py: no existe {db_path} (ejecuta make index antes)")
+    con = sqlite3.connect(db_path)
+    filas = con.execute(
+        "SELECT url, title, date, body FROM posts WHERE url LIKE '/posts/%' ORDER BY url"
+    ).fetchall()
+    entradas = []
+    for url, title, date, body in filas:
+        tags = [r[0] for r in con.execute("SELECT tag FROM tags WHERE url = ?", (url,))]
+        entradas.append({
+            "slug": url.strip("/").split("/")[-1],
+            "titulo": title,
+            "fecha": str(date),
+            "cuerpo": body.strip(),
+            "tags": tags,
+            "draft": False,
+        })
+    con.close()
+    return entradas
+
+
 def comprobar_destino(destino):
     """Falla con un mensaje claro si no es una base de datos de Chyrp Lite."""
     if not Path(destino).is_file():
@@ -223,10 +246,11 @@ def main():
     ap.add_argument("--autor", help="login del autor en Chyrp Lite (por defecto, el primer usuario)")
     ap.add_argument("--simulacro", action="store_true", help="muestra qué haría, sin escribir")
     ap.add_argument("--paginas", action="store_true", help="migra también las páginas (about.md)")
+    ap.add_argument("--desde-db", help="lee de build/site.db en vez de los .md")
     args = ap.parse_args()
 
     comprobar_destino(args.destino)
-    entradas = extraer(args.origen)
+    entradas = extraer_desde_db(args.desde_db) if args.desde_db else extraer(args.origen)
     ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     con = sqlite3.connect(args.destino)
