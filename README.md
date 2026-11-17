@@ -175,6 +175,20 @@ make check && make build
 git log --format='%h %ad %s' --date=iso | head -20
 ```
 
+---
+
+## P1.2 SGBD: Migración a Chyrp Lite + SQLite (rama `chyrp-lite`)
+
+Cambios realizados en esta rama para la práctica P1.2:
+
+- `tools/migrar.py`: script ETL (`extraer`, `transformar`, `cargar`) para migrar los posts en Markdown a la base de datos SQLite de Chyrp Lite (`posts` y `post_attributes`).
+  - Añadido soporte para migrar páginas estáticas (`content/about.md` -> tabla `pages`) con `transformar_pagina`, `cargar_paginas` y la opción `--paginas` (Ejercicio 2).
+  - Añadida función `extraer_desde_db` y opción `--desde-db` para probar la migración leyendo desde `build/site.db` y comparar qué se pierde (Ejercicio 3).
+  - Ajustada `etiquetas_json` (`par_etiqueta`) para que las etiquetas numéricas como `2026` lleven el prefijo `\ufe0e` y el hash MD5 como hace Chyrp Lite (Ejercicio 5).
+- `tools/test_migrar.py`: pruebas unitarias con `unittest` para `slugify`, `fecha_chyrp`, `etiquetas_json` (incluyendo etiquetas numéricas), `transformar` y `transformar_pagina`.
+- `Makefile`: añadidos los objetivos `make test` y `make migrar`.
+- `P1.2-orgaz.md`: memoria de la práctica con las tablas, respuestas, ejercicios y capturas en `capturas/`.
+
 ## Plantilla de feedback
 
 ```
