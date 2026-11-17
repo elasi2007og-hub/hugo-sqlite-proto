@@ -5,7 +5,14 @@ Ejecuta:  make test   (o: python3 -m unittest discover -s tools -v)
 """
 import unittest
 
-from migrar import SQL_DATETIME_ZERO, etiquetas_json, fecha_chyrp, slugify, transformar
+from migrar import (
+    SQL_DATETIME_ZERO,
+    etiquetas_json,
+    fecha_chyrp,
+    slugify,
+    transformar,
+    transformar_pagina,
+)
 
 ENTRADA = {
     "slug": "hola-hugo",
@@ -45,6 +52,7 @@ class TestEtiquetas(unittest.TestCase):
         self.assertEqual(etiquetas_json([]), "[]")
 
 
+
 class TestTransformar(unittest.TestCase):
     def setUp(self):
         self.fila = transformar(ENTRADA, user_id=1, ahora="2026-11-16 12:00:00")
@@ -67,6 +75,24 @@ class TestTransformar(unittest.TestCase):
         # Misma entrada, mismo resultado, y la entrada original no cambia.
         self.assertEqual(self.fila, transformar(ENTRADA, 1, "2026-11-16 12:00:00"))
         self.assertEqual(ENTRADA["tags"], ["hugo", "Árbol B"])
+
+
+class TestTransformarPagina(unittest.TestCase):
+    def test_pagina_about(self):
+        pag = {
+            "slug": "about",
+            "titulo": "Acerca de",
+            "fecha": "2026-10-27",
+            "cuerpo": "Sobre este blog.",
+            "tags": [],
+            "draft": False,
+        }
+        fila = transformar_pagina(pag, user_id=1, ahora="2026-11-16 12:00:00")
+        self.assertEqual(fila["clean"], "about")
+        self.assertEqual(fila["url"], "about")
+        self.assertEqual(fila["title"], "Acerca de")
+        self.assertEqual(fila["public"], 1)
+        self.assertEqual(fila["updated_at"], SQL_DATETIME_ZERO)
 
 
 if __name__ == "__main__":
